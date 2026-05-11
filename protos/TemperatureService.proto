@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package temperature_service;
+
+// Web service queried by clients to retrieve sensor data
+// populated by the Kafka consumer (step 3 in the pipeline).
+service TemperatureService {
+  // Latest processed reading (avg over last 2 h) for a sensor
+  rpc GetLatestReading (SensorRequest) returns (ProcessedReading) {}
+  // Full history of processed readings stored for a sensor
+  rpc GetHistory (SensorRequest) returns (ReadingHistory) {}
+  // IDs of all sensors seen so far
+  rpc ListSensors (EmptyMessage) returns (SensorList) {}
+  // Aggregated stats (global min/max/avg) across all stored readings
+  rpc GetOverallStats (SensorRequest) returns (OverallStats) {}
+}
+
+message SensorRequest {
+  string sensor_id = 1;
+}
+
+message EmptyMessage {}
+
+// One processed snapshot published by the processor (step 2)
+message ProcessedReading {
+  string sensor_id    = 1;
+  double avg_temp     = 2;
+  double min_temp     = 3;
+  double max_temp     = 4;
+  int32  sample_count = 5;
+  string window_start = 6;  // ISO-8601 UTC
+  string window_end   = 7;  // ISO-8601 UTC
+  string timestamp    = 8;  // when this snapshot was produced
+}
+
+message ReadingHistory {
+  repeated ProcessedReading readings = 1;
+}
+
+message SensorList {
+  repeated string sensor_ids = 1;
+}
+
+message OverallStats {
+  string sensor_id     = 1;
+  double global_avg    = 2;
+  double global_min    = 3;
+  double global_max    = 4;
+  int32  total_samples = 5;
+}
